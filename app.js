@@ -58,7 +58,9 @@
   function render() {
     list.innerHTML = "";
     emptyState.classList.toggle("hidden", todos.length > 0);
-    clearCompletedBtn.disabled = !todos.some((t) => t.done);
+    if (clearCompletedBtn) {
+      clearCompletedBtn.disabled = !todos.some((t) => t.done);
+    }
 
     todos.forEach((todo) => {
       const li = document.createElement("li");
@@ -85,7 +87,9 @@
     });
   }
 
-  clearCompletedBtn.addEventListener("click", clearCompleted);
+  if (clearCompletedBtn) {
+    clearCompletedBtn.addEventListener("click", clearCompleted);
+  }
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
