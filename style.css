@@ -113,6 +113,31 @@ button {
   background: #fdecea;
 }
 
+.todo-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.clear-completed {
+  padding: 0.5rem 0.9rem;
+  background: #fff;
+  color: #475467;
+  border: 1px solid #d0d5dd;
+  font-size: 0.9rem;
+}
+
+.clear-completed:hover:not(:disabled) {
+  background: #f9fafb;
+  color: #1f2933;
+}
+
+.clear-completed:disabled {
+  color: #b0b7c3;
+  border-color: #eceef1;
+  cursor: not-allowed;
+}
+
 .empty-state {
   text-align: center;
   color: #98a2b3;

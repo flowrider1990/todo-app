@@ -7,6 +7,7 @@
   const input = document.getElementById("todo-input");
   const list = document.getElementById("todo-list");
   const emptyState = document.getElementById("empty-state");
+  const clearCompletedBtn = document.getElementById("clear-completed");
 
   let todos = load();
 
@@ -48,9 +49,16 @@
     render();
   }
 
+  function clearCompleted() {
+    todos = todos.filter((t) => !t.done);
+    save();
+    render();
+  }
+
   function render() {
     list.innerHTML = "";
     emptyState.classList.toggle("hidden", todos.length > 0);
+    clearCompletedBtn.disabled = !todos.some((t) => t.done);
 
     todos.forEach((todo) => {
       const li = document.createElement("li");
@@ -76,6 +84,8 @@
       list.appendChild(li);
     });
   }
+
+  clearCompletedBtn.addEventListener("click", clearCompleted);
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
