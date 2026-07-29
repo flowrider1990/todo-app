@@ -23,7 +23,7 @@ Verification is manual: add a task, toggle it, delete it, click "Clear completed
 
 Three files, no abstraction layers:
 
-- [index.html](index.html) — static markup. Every element JS touches has a fixed `id`: `todo-form`, `todo-input`, `todo-list`, `empty-state`, `clear-completed`, `theme-toggle`, plus the detail dialog's `task-dialog`, `task-detail-form`, `detail-text`, `detail-done`, `detail-emoji`, `detail-due`, `detail-delete`, `detail-cancel`. The task list and the emoji picker are both empty containers filled at runtime.
+- [index.html](index.html) — static markup. Every element JS touches has a fixed `id`: `todo-form`, `todo-input`, `todo-list`, `empty-state`, `clear-completed`, `theme-toggle`, plus the detail dialog's `task-dialog`, `task-detail-form`, `detail-text`, `detail-done`, `detail-emoji`, `detail-due`, `detail-due-clear`, `detail-due-quick`, `detail-due-hint`, `detail-delete`, `detail-cancel`. The task list, the emoji picker and the due-date shortcuts are all empty containers filled at runtime.
 - [style.css](style.css) — plain CSS, no variables/nesting. State is expressed through classes JS toggles: `.todo-item.done`, `.empty-state.hidden`, `body.theme-dark`, plus the native `:disabled` state on `.clear-completed`.
 - [app.js](app.js) — the whole app, wrapped in an IIFE with `"use strict"`. Nothing is exposed on `window`.
 

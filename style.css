@@ -210,8 +210,11 @@ button {
 /* Task detail dialog */
 
 .task-dialog {
-  width: 100%;
-  max-width: 380px;
+  /* A modal dialog is centred by the UA via margin:auto against inset:0.
+     The * reset above zeroes that out, so it has to be restored here. */
+  margin: auto;
+  width: calc(100% - 2rem);
+  max-width: 420px;
   border: none;
   border-radius: 12px;
   padding: 1.25rem;
@@ -251,7 +254,87 @@ button {
   font: inherit;
   background: #fff;
   color: inherit;
+}
+
+#detail-text {
   margin-bottom: 1rem;
+}
+
+.due-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.due-row #detail-due {
+  flex: 1;
+  min-width: 0;
+}
+
+.due-clear {
+  flex-shrink: 0;
+  background: transparent;
+  color: #98a2b3;
+  border: 1px solid #d0d5dd;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.45rem 0.65rem;
+}
+
+.due-clear:hover {
+  background: #fdecea;
+  border-color: #f0c4be;
+  color: #c0392b;
+}
+
+.due-clear.hidden {
+  display: none;
+}
+
+.due-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.due-chip {
+  background: #f4f5f7;
+  color: #475467;
+  border: 1px solid #e3e7ee;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  padding: 0.3rem 0.7rem;
+}
+
+.due-chip:hover {
+  background: #e9edf4;
+  color: #1f2933;
+}
+
+.due-chip.active {
+  background: rgba(79, 124, 255, 0.12);
+  border-color: #4f7cff;
+  color: #2f52b5;
+  font-weight: 600;
+}
+
+.due-hint {
+  font-size: 0.8rem;
+  color: #98a2b3;
+  min-height: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.due-hint.due-today {
+  color: #93500b;
+  font-weight: 600;
+}
+
+.due-hint.overdue {
+  color: #a3261a;
+  font-weight: 600;
 }
 
 #detail-text:focus,
@@ -273,13 +356,53 @@ button {
   width: 1.15rem;
   height: 1.15rem;
   cursor: pointer;
+  accent-color: #16a34a;
+}
+
+/* Adjacent sibling of the checkbox — no JS needed to light it up. */
+#detail-done:checked + span {
+  color: #16a34a;
+  font-weight: 600;
 }
 
 .emoji-picker {
+  margin-bottom: 1rem;
+}
+
+.emoji-trigger {
+  width: 2.4rem;
+  height: 2.4rem;
+  background: #fff;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0;
+  color: #98a2b3;
+}
+
+.emoji-trigger.has-emoji {
+  color: inherit;
+}
+
+.emoji-trigger:hover {
+  background: #f9fafb;
+  border-color: #98a2b3;
+}
+
+.emoji-trigger[aria-expanded="true"] {
+  border-color: #4f7cff;
+  box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.15);
+}
+
+.emoji-grid {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
   gap: 0.25rem;
-  margin-bottom: 1rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid #eceef1;
+  border-radius: 8px;
 }
 
 .emoji-option {
@@ -477,6 +600,78 @@ body.theme-dark #detail-text:focus,
 body.theme-dark #detail-due:focus {
   border-color: #6b8fff;
   box-shadow: 0 0 0 3px rgba(107, 143, 255, 0.25);
+}
+
+body.theme-dark .detail-done input[type="checkbox"] {
+  accent-color: #22c55e;
+}
+
+body.theme-dark #detail-done:checked + span {
+  color: #4ade80;
+}
+
+body.theme-dark .due-clear {
+  color: #7b8794;
+  border-color: #333c4a;
+}
+
+body.theme-dark .due-clear:hover {
+  background: #3a2320;
+  border-color: #5c2f2a;
+  color: #f27c72;
+}
+
+body.theme-dark .due-chip {
+  background: #232b36;
+  color: #cbd2d9;
+  border-color: #333c4a;
+}
+
+body.theme-dark .due-chip:hover {
+  background: #2c3644;
+  color: #f5f7fa;
+}
+
+body.theme-dark .due-chip.active {
+  background: rgba(107, 143, 255, 0.2);
+  border-color: #6b8fff;
+  color: #a8c0ff;
+}
+
+body.theme-dark .due-hint {
+  color: #7b8794;
+}
+
+body.theme-dark .due-hint.due-today {
+  color: #f0c37a;
+}
+
+body.theme-dark .due-hint.overdue {
+  color: #f2a49b;
+}
+
+body.theme-dark .emoji-trigger {
+  background: #131820;
+  border-color: #333c4a;
+  color: #7b8794;
+}
+
+body.theme-dark .emoji-trigger.has-emoji {
+  color: inherit;
+}
+
+body.theme-dark .emoji-trigger:hover {
+  background: #232b36;
+  border-color: #4a5666;
+}
+
+body.theme-dark .emoji-trigger[aria-expanded="true"] {
+  border-color: #6b8fff;
+  box-shadow: 0 0 0 3px rgba(107, 143, 255, 0.25);
+}
+
+body.theme-dark .emoji-grid {
+  border-color: #2a3341;
 }
 
 body.theme-dark .emoji-option:hover {
