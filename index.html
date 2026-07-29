@@ -13,14 +13,17 @@
       <button id="theme-toggle" class="theme-toggle" type="button"></button>
     </header>
     <form id="todo-form" class="todo-form">
-      <input
-        type="text"
-        id="todo-input"
-        placeholder="What needs to be done?"
-        autocomplete="off"
-        required
-      >
-      <button type="submit">Add</button>
+      <div class="todo-form-row">
+        <input
+          type="text"
+          id="todo-input"
+          placeholder="What needs to be done?"
+          autocomplete="off"
+          required
+        >
+        <button type="submit">Add</button>
+      </div>
+      <p id="todo-error" class="todo-error" role="alert"></p>
     </form>
     <ul id="todo-list" class="todo-list"></ul>
     <p id="empty-state" class="empty-state">No tasks yet. Add one above!</p>

@@ -38,6 +38,7 @@
   const input = document.getElementById("todo-input");
   const list = document.getElementById("todo-list");
   const emptyState = document.getElementById("empty-state");
+  const todoError = document.getElementById("todo-error");
   const clearCompletedBtn = document.getElementById("clear-completed");
   const themeToggleBtn = document.getElementById("theme-toggle");
 
@@ -335,6 +336,25 @@
     if (id) deleteTodo(id);
   }
 
+  // Done and un-done tasks both block a new one, but the wording differs, so
+  // this returns the match rather than a boolean. An open duplicate wins when
+  // both exist — it is the more actionable of the two.
+  function findDuplicate(text) {
+    const needle = text.toLowerCase();
+    const matches = todos.filter((t) => t.text.toLowerCase() === needle);
+    return matches.find((t) => !t.done) || matches[0] || null;
+  }
+
+  function showTodoError(message) {
+    if (todoError) todoError.textContent = message;
+    if (input) input.classList.add("invalid");
+  }
+
+  function clearTodoError() {
+    if (todoError) todoError.textContent = "";
+    if (input) input.classList.remove("invalid");
+  }
+
   function addTodo(text) {
     todos.push({
       id: String(Date.now()) + Math.random().toString(16).slice(2),
@@ -482,10 +502,26 @@
     if (!theme) applyTheme();
   });
 
+  input.addEventListener("input", clearTodoError);
+
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const text = input.value.trim();
     if (!text) return;
+
+    const duplicate = findDuplicate(text);
+    if (duplicate) {
+      showTodoError(
+        duplicate.done
+          ? "A completed task with that name already exists. Choose a different name or clear the list."
+          : "A task with that name already exists."
+      );
+      input.focus();
+      input.select();
+      return;
+    }
+
+    clearTodoError();
     addTodo(text);
     input.value = "";
     input.focus();
