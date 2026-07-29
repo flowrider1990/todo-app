@@ -24,7 +24,7 @@ Verification is manual: add a task, toggle it, delete it, click "Clear completed
 Three files, no abstraction layers:
 
 - [index.html](index.html) — static markup. Every element JS touches has a fixed `id`: `todo-form`, `todo-input`, `todo-list`, `empty-state`, `clear-completed`, `theme-toggle`, plus the detail dialog's `task-dialog`, `task-detail-form`, `detail-text`, `detail-done`, `detail-emoji`, `detail-due`, `detail-due-clear`, `detail-due-quick`, `detail-due-hint`, `detail-delete`, `detail-cancel`. The task list, the emoji picker and the due-date shortcuts are all empty containers filled at runtime.
-- [style.css](style.css) — plain CSS, no variables/nesting. State is expressed through classes JS toggles: `.todo-item.done`, `.empty-state.hidden`, `body.theme-dark`, plus the native `:disabled` state on `.clear-completed`.
+- [style.css](style.css) — plain CSS, no variables/nesting. State is expressed through classes JS toggles: `.todo-item.done`, `.empty-state.hidden`, `body.theme-dark`, `.due-badge.overdue` / `.due-badge.due-today` (and the same pair on `.due-hint`), `.due-clear.hidden`, `.due-chip.active`, `.emoji-option.selected`, `.emoji-trigger.has-emoji`, plus the native `:disabled` state on `.clear-completed` and `[aria-expanded]` on `.emoji-trigger`.
 - [app.js](app.js) — the whole app, wrapped in an IIFE with `"use strict"`. Nothing is exposed on `window`.
 
 ### The one pattern to follow
@@ -41,9 +41,9 @@ Theme is the one piece of state that lives outside the `todos` array, and it mir
 
 Other conventions in `app.js`:
 
-- Todo shape is `{ id, text, done, emoji, due }`. `id` is a timestamp plus random suffix — treat it as an opaque string. `emoji` is `""` or a single emoji; `due` is `""` or a `YYYY-MM-DD` string. Todos saved before those two fields existed simply lack them, which reads as `undefined` — falsy, like `""` — so guard rather than migrate.
+- Todo shape is `{ id, text, done, emoji, due }`. `id` is a timestamp plus random suffix — treat it as an opaque string. `emoji` is `""` or a single emoji; `due` is `""` or a `YYYY-MM-DD` string. `load()` runs every stored entry through `normalize()`, so those types are guaranteed by the time anything renders — older todos missing `emoji`/`due` come back with `""`, and entries without a string `id` and `text` are dropped. Rely on that instead of re-guarding at each use.
 - **Dates never go through `new Date(string)`.** `new Date("2026-07-30")` parses as UTC midnight and renders as the 29th in any negative-offset timezone. Compare `due` against `todayISO()` as strings (ISO dates sort lexicographically) and build display dates from parts.
 - The detail dialog lives **outside `#todo-list`** in the markup, because `render()` rebuilds that list on every mutation and would destroy it mid-edit. It holds only `editingId` plus a `draftEmoji` for the picker; task data is always re-read from `todos` by id. Everything commits together on Save — except Delete, which acts immediately and closes.
 - List items are built with `createElement` and `textContent`, never `innerHTML`, so user text cannot inject markup. Keep it that way.
-- `load()` wraps `JSON.parse` in try/catch and falls back to `[]`, so corrupt `localStorage` cannot break startup.
+- `load()` wraps `JSON.parse` in try/catch, rejects a non-array, and normalises every entry, so corrupt `localStorage` cannot break startup. This is stronger than a try/catch alone: valid JSON of the wrong shape once reached `due.split()` inside `render()` and blanked the entire list. Any new field must be type-checked in `normalize()`, not trusted.
 - Optional elements are guarded (`if (clearCompletedBtn)`) — a missing element must not throw and take the whole app down. This was a real bug fix (commit `1acf1c0`); preserve the guards, and follow the same approach for any element that might not be present.

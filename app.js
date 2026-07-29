@@ -66,10 +66,31 @@
   // The palette stays collapsed behind the trigger until asked for.
   let emojiExpanded = false;
 
+  function isDueString(value) {
+    return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+  }
+
+  // JSON.parse only guarantees valid JSON, not a usable todo. Without this,
+  // a hand-edited due of the wrong type reaches due.split() in formatDue and
+  // throws inside render(), blanking the whole list at startup.
+  function normalize(entry) {
+    if (!entry || typeof entry !== "object") return null;
+    if (typeof entry.id !== "string" || typeof entry.text !== "string") return null;
+    return {
+      id: entry.id,
+      text: entry.text,
+      done: entry.done === true,
+      emoji: typeof entry.emoji === "string" ? entry.emoji : "",
+      due: isDueString(entry.due) ? entry.due : "",
+    };
+  }
+
   function load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : [];
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map(normalize).filter(Boolean);
     } catch (e) {
       return [];
     }
@@ -137,11 +158,17 @@
     return isoFrom(date);
   }
 
+  // Built from parts, so the result is local midnight rather than the UTC
+  // midnight new Date("2026-07-30") would give.
+  function dateFromISO(due) {
+    const parts = due.split("-");
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  }
+
   // Both sides are pinned to local midnight before diffing, and rounded, so a
   // 23- or 25-hour DST day cannot knock the count off by one.
   function daysUntil(due) {
-    const parts = due.split("-");
-    const target = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    const target = dateFromISO(due);
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     return Math.round((target - start) / 86400000);
@@ -156,15 +183,12 @@
     return Math.abs(diff) + " days ago";
   }
 
-  function formatDue(due) {
-    const today = todayISO();
+  function formatDue(due, today) {
     if (due === today) return "Today";
 
-    const parts = due.split("-");
-    const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
     const options = { month: "short", day: "numeric" };
-    if (parts[0] !== today.slice(0, 4)) options.year = "numeric";
-    return date.toLocaleDateString(undefined, options);
+    if (due.slice(0, 4) !== today.slice(0, 4)) options.year = "numeric";
+    return dateFromISO(due).toLocaleDateString(undefined, options);
   }
 
   function openTaskDialog(id) {
@@ -177,6 +201,7 @@
     draftEmoji = todo.emoji || "";
     emojiExpanded = false;
     detailText.value = todo.text;
+    detailText.setCustomValidity("");
     detailDone.checked = todo.done;
     detailDue.value = todo.due || "";
     syncDueUI();
@@ -286,9 +311,14 @@
 
     const text = detailText.value.trim();
     if (!text) {
+      // Pressing Save and getting silence reads as broken. reportValidity
+      // surfaces the reason natively, with no extra markup to style.
+      detailText.setCustomValidity("Give the task a name.");
+      detailText.reportValidity();
       detailText.focus();
       return;
     }
+    detailText.setCustomValidity("");
 
     todo.text = text;
     todo.done = detailDone.checked;
@@ -345,6 +375,8 @@
       clearCompletedBtn.disabled = !todos.some((t) => t.done);
     }
 
+    const today = todayISO();
+
     todos.forEach((todo) => {
       const li = document.createElement("li");
       li.className = "todo-item" + (todo.done ? " done" : "");
@@ -381,12 +413,11 @@
 
       if (todo.due) {
         const badge = document.createElement("span");
-        const today = todayISO();
         let state = "";
         if (todo.due < today) state = " overdue";
         else if (todo.due === today) state = " due-today";
         badge.className = "due-badge" + state;
-        badge.textContent = formatDue(todo.due);
+        badge.textContent = formatDue(todo.due, today);
         li.append(badge);
       }
 
@@ -408,6 +439,12 @@
       e.preventDefault();
       saveTaskDetails();
     });
+  }
+
+  if (detailText) {
+    // A lingering custom error keeps the field :invalid, which would stop the
+    // form from ever firing submit again.
+    detailText.addEventListener("input", () => detailText.setCustomValidity(""));
   }
 
   if (detailDue) {

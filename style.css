@@ -256,6 +256,13 @@ button {
   color: inherit;
 }
 
+#detail-text:focus,
+#detail-due:focus {
+  outline: none;
+  border-color: #4f7cff;
+  box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.15);
+}
+
 #detail-text {
   margin-bottom: 1rem;
 }
@@ -337,13 +344,6 @@ button {
   font-weight: 600;
 }
 
-#detail-text:focus,
-#detail-due:focus {
-  outline: none;
-  border-color: #4f7cff;
-  box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.15);
-}
-
 .detail-done {
   display: flex;
   align-items: center;
@@ -397,7 +397,9 @@ button {
 
 .emoji-grid {
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
+  /* auto-fill rather than a fixed 9 columns: at 320px the fixed grid squeezed
+     cells to ~22px, clipping the glyphs. This keeps 9 across on desktop. */
+  grid-template-columns: repeat(auto-fill, minmax(2rem, 1fr));
   gap: 0.25rem;
   margin-top: 0.5rem;
   padding: 0.5rem;
