@@ -347,7 +347,7 @@
   function duplicateMessage(duplicate) {
     return duplicate.done
       ? "A completed task with that name already exists.\nChoose a different name or clear the list."
-      : "A task with that name already exists.";
+      : "A task with that name already exists.\nPlease choose a different name.";
   }
 
   // One error component, used by the add form and the detail dialog alike.
