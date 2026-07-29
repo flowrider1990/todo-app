@@ -23,8 +23,8 @@ Verification is manual: add a task, toggle it, delete it, click "Clear completed
 
 Three files, no abstraction layers:
 
-- [index.html](index.html) — static markup. Every element JS touches has a fixed `id`: `todo-form`, `todo-input`, `todo-list`, `empty-state`, `clear-completed`. The task list itself is an empty `<ul>` filled at runtime.
-- [style.css](style.css) — plain CSS, no variables/nesting. State is expressed through classes JS toggles: `.todo-item.done`, `.empty-state.hidden`, plus the native `:disabled` state on `.clear-completed`.
+- [index.html](index.html) — static markup. Every element JS touches has a fixed `id`: `todo-form`, `todo-input`, `todo-list`, `empty-state`, `clear-completed`, `theme-toggle`. The task list itself is an empty `<ul>` filled at runtime.
+- [style.css](style.css) — plain CSS, no variables/nesting. State is expressed through classes JS toggles: `.todo-item.done`, `.empty-state.hidden`, `body.theme-dark`, plus the native `:disabled` state on `.clear-completed`.
 - [app.js](app.js) — the whole app, wrapped in an IIFE with `"use strict"`. Nothing is exposed on `window`.
 
 ### The one pattern to follow
@@ -36,6 +36,8 @@ mutate todos → save() → render()
 ```
 
 When adding a feature (filters, editing, reordering, counts), extend this pattern rather than patching the DOM in place. Do not introduce a second copy of state or read task data back out of the DOM.
+
+Theme is the one piece of state that lives outside the `todos` array, and it mirrors the same shape: `mutate theme → saveTheme() → applyTheme()`. It is stored separately under the `theme` key, holding `"light"` or `"dark"` only once the user clicks the toggle — until then the variable is `null` and the app follows `prefers-color-scheme`, which is why `resolvedTheme()` exists and why the `matchMedia` change listener re-applies only while no override is set.
 
 Other conventions in `app.js`:
 

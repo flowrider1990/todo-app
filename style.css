@@ -23,10 +23,31 @@ body {
   padding: 1.5rem;
 }
 
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
 h1 {
   font-size: 1.5rem;
-  margin-bottom: 1rem;
-  text-align: center;
+}
+
+.theme-toggle {
+  background: transparent;
+  color: #475467;
+  border: 1px solid #d0d5dd;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.35rem 0.6rem;
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+  background: #f9fafb;
+  color: #1f2933;
 }
 
 .todo-form {
@@ -146,4 +167,83 @@ button {
 
 .empty-state.hidden {
   display: none;
+}
+
+/* Dark theme. Toggled by JS via the theme-dark class on body. */
+
+body.theme-dark {
+  /* Also makes the native checkboxes render dark. */
+  color-scheme: dark;
+  background: #14181f;
+  color: #e4e7eb;
+}
+
+body.theme-dark .app {
+  background: #1c222c;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+body.theme-dark #todo-input {
+  background: #131820;
+  border-color: #333c4a;
+  color: #e4e7eb;
+}
+
+body.theme-dark #todo-input::placeholder {
+  color: #7b8794;
+}
+
+body.theme-dark #todo-input:focus {
+  border-color: #6b8fff;
+  box-shadow: 0 0 0 3px rgba(107, 143, 255, 0.25);
+}
+
+body.theme-dark .todo-form button:hover {
+  background: #6b8fff;
+}
+
+body.theme-dark .todo-item {
+  border-bottom-color: #2a3341;
+}
+
+body.theme-dark .todo-item.done .text {
+  color: #7b8794;
+}
+
+body.theme-dark .delete-btn {
+  color: #f27c72;
+}
+
+body.theme-dark .delete-btn:hover {
+  background: #3a2320;
+}
+
+body.theme-dark .theme-toggle {
+  color: #cbd2d9;
+  border-color: #333c4a;
+}
+
+body.theme-dark .theme-toggle:hover {
+  background: #232b36;
+  color: #f5f7fa;
+}
+
+body.theme-dark .clear-completed {
+  background: #1c222c;
+  color: #cbd2d9;
+  border-color: #333c4a;
+}
+
+body.theme-dark .clear-completed:hover:not(:disabled) {
+  background: #232b36;
+  color: #f5f7fa;
+}
+
+body.theme-dark .clear-completed:disabled {
+  color: #5a6472;
+  border-color: #262e3a;
+}
+
+body.theme-dark .empty-state {
+  color: #7b8794;
 }
