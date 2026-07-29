@@ -45,6 +45,7 @@
   const dialog = document.getElementById("task-dialog");
   const detailForm = document.getElementById("task-detail-form");
   const detailText = document.getElementById("detail-text");
+  const detailError = document.getElementById("detail-error");
   const detailDone = document.getElementById("detail-done");
   const detailEmoji = document.getElementById("detail-emoji");
   const detailDue = document.getElementById("detail-due");
@@ -202,7 +203,7 @@
     draftEmoji = todo.emoji || "";
     emojiExpanded = false;
     detailText.value = todo.text;
-    detailText.setCustomValidity("");
+    clearFieldError(detailText, detailError);
     detailDone.checked = todo.done;
     detailDue.value = todo.due || "";
     syncDueUI();
@@ -311,15 +312,8 @@
     if (!todo) return;
 
     const text = detailText.value.trim();
-    if (!text) {
-      // Pressing Save and getting silence reads as broken. reportValidity
-      // surfaces the reason natively, with no extra markup to style.
-      detailText.setCustomValidity("Give the task a name.");
-      detailText.reportValidity();
-      detailText.focus();
-      return;
-    }
-    detailText.setCustomValidity("");
+    // exceptId, or the task would collide with its own unchanged name.
+    if (!validateName(text, detailText, detailError, editingId)) return;
 
     todo.text = text;
     todo.done = detailDone.checked;
@@ -336,23 +330,56 @@
     if (id) deleteTodo(id);
   }
 
-  // Done and un-done tasks both block a new one, but the wording differs, so
-  // this returns the match rather than a boolean. An open duplicate wins when
-  // both exist — it is the more actionable of the two.
-  function findDuplicate(text) {
+  // Done and un-done tasks both block, but the wording differs, so this
+  // returns the match rather than a boolean. An open duplicate wins when both
+  // exist — it is the more actionable of the two. exceptId lets a rename skip
+  // the task being renamed, which would otherwise always match itself.
+  function findDuplicate(text, exceptId) {
     const needle = text.toLowerCase();
-    const matches = todos.filter((t) => t.text.toLowerCase() === needle);
+    const matches = todos.filter(
+      (t) => t.id !== exceptId && t.text.toLowerCase() === needle
+    );
     return matches.find((t) => !t.done) || matches[0] || null;
   }
 
-  function showTodoError(message) {
-    if (todoError) todoError.textContent = message;
-    if (input) input.classList.add("invalid");
+  // \n rather than markup — .form-error is white-space: pre-line, so the text
+  // stays a plain textContent assignment.
+  function duplicateMessage(duplicate) {
+    return duplicate.done
+      ? "A completed task with that name already exists.\nChoose a different name or clear the list."
+      : "A task with that name already exists.";
   }
 
-  function clearTodoError() {
-    if (todoError) todoError.textContent = "";
-    if (input) input.classList.remove("invalid");
+  // One error component, used by the add form and the detail dialog alike.
+  function setFieldError(field, errorEl, message) {
+    if (errorEl) errorEl.textContent = message;
+    if (!field) return;
+    field.classList.add("invalid");
+    field.focus();
+    field.select();
+  }
+
+  function clearFieldError(field, errorEl) {
+    if (errorEl) errorEl.textContent = "";
+    if (field) field.classList.remove("invalid");
+  }
+
+  // Shared by both forms: empty and duplicate names are rejected identically
+  // whether you are creating a task or renaming one.
+  function validateName(text, field, errorEl, exceptId) {
+    if (!text) {
+      setFieldError(field, errorEl, "Give the task a name.");
+      return false;
+    }
+
+    const duplicate = findDuplicate(text, exceptId);
+    if (duplicate) {
+      setFieldError(field, errorEl, duplicateMessage(duplicate));
+      return false;
+    }
+
+    clearFieldError(field, errorEl);
+    return true;
   }
 
   function addTodo(text) {
@@ -462,9 +489,7 @@
   }
 
   if (detailText) {
-    // A lingering custom error keeps the field :invalid, which would stop the
-    // form from ever firing submit again.
-    detailText.addEventListener("input", () => detailText.setCustomValidity(""));
+    detailText.addEventListener("input", () => clearFieldError(detailText, detailError));
   }
 
   if (detailDue) {
@@ -494,6 +519,7 @@
       editingId = null;
       draftEmoji = "";
       emojiExpanded = false;
+      clearFieldError(detailText, detailError);
     });
   }
 
@@ -502,26 +528,13 @@
     if (!theme) applyTheme();
   });
 
-  input.addEventListener("input", clearTodoError);
+  input.addEventListener("input", () => clearFieldError(input, todoError));
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const text = input.value.trim();
-    if (!text) return;
+    if (!validateName(text, input, todoError)) return;
 
-    const duplicate = findDuplicate(text);
-    if (duplicate) {
-      showTodoError(
-        duplicate.done
-          ? "A completed task with that name already exists. Choose a different name or clear the list."
-          : "A task with that name already exists."
-      );
-      input.focus();
-      input.select();
-      return;
-    }
-
-    clearTodoError();
     addTodo(text);
     input.value = "";
     input.focus();

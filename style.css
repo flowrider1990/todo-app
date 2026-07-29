@@ -59,15 +59,18 @@ h1 {
   gap: 0.5rem;
 }
 
-/* :empty collapses it entirely, so the spacing below the form is unchanged
-   until there is actually something to say. */
-.todo-error {
+/* Shared by the add form and the detail dialog. :empty collapses it entirely,
+   so spacing is unchanged until there is something to say. pre-line honours
+   \n in the message, which keeps the text a plain textContent assignment
+   instead of innerHTML. */
+.form-error {
   font-size: 0.8rem;
   color: #a3261a;
   margin-top: 0.5rem;
+  white-space: pre-line;
 }
 
-.todo-error:empty {
+.form-error:empty {
   display: none;
 }
 
@@ -85,11 +88,15 @@ h1 {
   box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.15);
 }
 
-#todo-input.invalid {
+/* Both text fields share the invalid state. Listed by id because the base
+   rules are id-level, and a bare .invalid would lose on specificity. */
+#todo-input.invalid,
+#detail-text.invalid {
   border-color: #c0392b;
 }
 
-#todo-input.invalid:focus {
+#todo-input.invalid:focus,
+#detail-text.invalid:focus {
   border-color: #c0392b;
   box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
 }
@@ -291,7 +298,9 @@ button {
   box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.15);
 }
 
-#detail-text {
+/* Groups the label, input and error so the error sits tight under the field
+   while the gap below the group stays constant. */
+.field {
   margin-bottom: 1rem;
 }
 
@@ -630,15 +639,17 @@ body.theme-dark .detail-done input[type="checkbox"] {
   accent-color: #22c55e;
 }
 
-body.theme-dark .todo-error {
+body.theme-dark .form-error {
   color: #f2a49b;
 }
 
-body.theme-dark #todo-input.invalid {
+body.theme-dark #todo-input.invalid,
+body.theme-dark #detail-text.invalid {
   border-color: #f27c72;
 }
 
-body.theme-dark #todo-input.invalid:focus {
+body.theme-dark #todo-input.invalid:focus,
+body.theme-dark #detail-text.invalid:focus {
   border-color: #f27c72;
   box-shadow: 0 0 0 3px rgba(242, 124, 114, 0.2);
 }

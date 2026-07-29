@@ -19,11 +19,11 @@
           id="todo-input"
           placeholder="What needs to be done?"
           autocomplete="off"
-          required
+          aria-required="true"
         >
         <button type="submit">Add</button>
       </div>
-      <p id="todo-error" class="todo-error" role="alert"></p>
+      <p id="todo-error" class="form-error" role="alert"></p>
     </form>
     <ul id="todo-list" class="todo-list"></ul>
     <p id="empty-state" class="empty-state">No tasks yet. Add one above!</p>
@@ -39,8 +39,11 @@
     <form id="task-detail-form" class="task-detail">
       <h2 class="detail-title">Task details</h2>
 
-      <label class="detail-label" for="detail-text">Name</label>
-      <input type="text" id="detail-text" autocomplete="off">
+      <div class="field">
+        <label class="detail-label" for="detail-text">Name</label>
+        <input type="text" id="detail-text" autocomplete="off" aria-required="true">
+        <p id="detail-error" class="form-error" role="alert"></p>
+      </div>
 
       <label class="detail-done">
         <input type="checkbox" id="detail-done">
