@@ -666,22 +666,30 @@
 
   /* ---------- name validation ---------- */
 
-  // Done and un-done tasks both block, but the wording differs, so this
-  // returns the match rather than a boolean. An open duplicate wins when both
-  // exist — it is the more actionable of the two. exceptId lets a rename skip
-  // the task being renamed, which would otherwise always match itself.
+  // "Clear completed" only reaches the Done section, so only a match sitting
+  // there can be resolved that way. Asking `todo.done` is not enough: for a
+  // repeating task that flag is unused and always reads false, which would
+  // point someone at the wrong way out.
+  function isClearable(todo) {
+    return sectionOf(todo, todayISO()) === "done";
+  }
+
+  // A clearable and a still-live task both block, but the wording differs, so
+  // this returns the match rather than a boolean. A live duplicate wins when
+  // both exist — it is the more actionable of the two. exceptId lets a rename
+  // skip the task being renamed, which would otherwise always match itself.
   function findDuplicate(text, exceptId) {
     const needle = text.toLowerCase();
     const matches = todos.filter(
       (t) => t.id !== exceptId && t.text.toLowerCase() === needle
     );
-    return matches.find((t) => !t.done) || matches[0] || null;
+    return matches.find((t) => !isClearable(t)) || matches[0] || null;
   }
 
   // { text, action }: the statement, then the call to action, which renders
   // bold on its own line. action is optional.
   function duplicateMessage(duplicate) {
-    return duplicate.done
+    return isClearable(duplicate)
       ? {
           text: "A completed task with that name already exists.",
           action: "Choose a different name or clear the list.",

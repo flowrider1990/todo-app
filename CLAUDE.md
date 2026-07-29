@@ -2,11 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## How to talk to the user
+## How to report back
 
-Talk to them as a **product owner**, not a developer. They decide what the app should do; they are not here to review implementation detail.
+**"Product owner" means the person you are talking to in this conversation — the human directing the work.** Not the app's end user, and not a role in the app. Address them as the product owner of this project: they decide what the app should do, and they are not here to review implementation detail.
 
-- Lead with what changed for the user and what it means for them. Keep the "how" short, or leave it out.
+- Lead with what changed and what it means for them as the owner of this product. Keep the "how" short, or leave it out.
 - Skip jargon, code identifiers, file paths and line numbers unless they asked for them or something is genuinely broken.
 - Do raise anything that needs a decision — a tradeoff, a risk, something ambiguous in the request, or work left undone. Frame it in terms of consequences, not mechanics.
 - Say plainly what is done, what is not, and what has not been checked. Never imply something was verified when it was not.
@@ -40,7 +40,7 @@ Three files, no abstraction layers:
 
 - [index.html](index.html) — static markup. Every element JS touches has a fixed `id`; there are ~48 of them, so rather than listing them here, note the rule: **if JS looks it up, it has an `id` in the markup**, and a quick `getElementById` vs `id="…"` diff is worth running after any markup change — a missing element silently disables a whole feature. The three section containers (`section-open` / `list-open`, `section-later` / `list-later`, `section-done` / `list-done`), the emoji picker, and every chip row are empty containers filled at runtime.
 - [style.css](style.css) — plain CSS, no variables/nesting. State is expressed through classes JS toggles: `.todo-item.done`, `.todo-item.flash`, `body.theme-dark`, `.due-badge.overdue` / `.due-badge.due-today` (and the same pair on `.due-hint`), `.chip.active`, `.emoji-option.selected`, `.emoji-trigger.has-emoji`, `.invalid` on the four text/date fields, plus the native `:disabled` on `.clear-completed` and `[aria-expanded]` on `.emoji-trigger`. `.form-error` collapses via `:empty` rather than a toggled class, so JS only ever sets its `textContent`.
-  - `.hidden` is the one general-purpose toggle. Because most of what it hides is `display: flex` or `display: block`, it cannot be a bare `.hidden { display: none }` — there is a single grouped rule listing each class it applies to (`.section.hidden, .repeat-block.hidden, …`). Adding a newly hideable element means adding it to that list; `!important` is deliberately avoided.
+  - `.hidden` is the one general-purpose toggle. Because most of what it hides is `display: flex` or `display: block`, it cannot be a bare `.hidden { display: none }` — every selector names its own class so specificity is never in question, and `!important` is deliberately avoided. This means `.hidden` is defined in **three** places, not one: a grouped rule (`.section.hidden, .repeat-block.hidden, …`) plus two older standalone rules that sit next to their own components, `.empty-state.hidden` and `.due-clear.hidden`. Making a new element hideable means giving it a selector — adding it to the group is usually right, but check the component's own rules first.
   - `.chip` is one component shared by the due-date shortcuts, the repeat presets, the weekday toggles and the end condition. It was `.due-chip` until repeats needed the same thing three more times; keep it generic.
   - The `@media (max-width: 400px)` block is last in the file so it wins over the dark rules too. It hides `.repeat-detail:not(.keep)`, which is what stops a row carrying both a repeat badge and a date from breaking the task name one word per line.
 - [app.js](app.js) — the whole app, wrapped in an IIFE with `"use strict"`. Nothing is exposed on `window`.
