@@ -92,15 +92,20 @@ h1 {
   box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.15);
 }
 
-/* Both text fields share the invalid state. Listed by id because the base
-   rules are id-level, and a bare .invalid would lose on specificity. */
+/* Every field that can be rejected shares the invalid state. Listed by id
+   because the base rules are id-level, and a bare .invalid would lose on
+   specificity. */
 #todo-input.invalid,
-#detail-text.invalid {
+#detail-text.invalid,
+#detail-due.invalid,
+#detail-end-date.invalid {
   border-color: #c0392b;
 }
 
 #todo-input.invalid:focus,
-#detail-text.invalid:focus {
+#detail-text.invalid:focus,
+#detail-due.invalid:focus,
+#detail-end-date.invalid:focus {
   border-color: #c0392b;
   box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
 }
@@ -125,6 +130,57 @@ button {
 
 .todo-list {
   list-style: none;
+}
+
+/* Sections: Open, Done for now, Done. The last two are <details>, so the
+   disclosure triangle, keyboard handling and aria-expanded are all native. */
+
+.section-collapsible {
+  border-top: 1px solid #eceef1;
+  margin-top: 0.75rem;
+}
+
+.section-heading,
+.section-summary {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #98a2b3;
+  padding: 0.55rem 0.2rem;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Left as the default list-item display a <summary> already has — turning it
+   into a flex row drops the disclosure triangle onto its own line. */
+.section-summary {
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.section-summary:hover {
+  color: #475467;
+}
+
+.section-summary::marker {
+  color: #b0b7c3;
+}
+
+.section-count {
+  font-weight: 400;
+}
+
+.section-count::before {
+  content: "(";
+}
+
+.section-count::after {
+  content: ")";
 }
 
 .todo-item {
@@ -193,9 +249,53 @@ button {
   color: #a3261a;
 }
 
+/* Deliberately quieter than the due badge — the repeat rule is context, the
+   date is the thing you act on. */
+.repeat-badge {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #3a5bbf;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.repeat-badge.finished {
+  background: #eef1f6;
+  color: #7b8794;
+}
+
+.repeat-detail {
+  margin-left: 0.25rem;
+}
+
 .todo-item.done .text {
   text-decoration: line-through;
   color: #98a2b3;
+}
+
+/* Ticking off a repeating task moves it to another section rather than leaving
+   a ticked box behind, so the change needs its own acknowledgement. */
+@keyframes row-flash {
+  from {
+    background: rgba(22, 163, 74, 0.18);
+  }
+  to {
+    background: transparent;
+  }
+}
+
+.todo-item.flash {
+  animation: row-flash 0.9s ease-out;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .todo-item.flash {
+    animation: none;
+  }
 }
 
 .delete-btn {
@@ -285,7 +385,8 @@ button {
 }
 
 #detail-text,
-#detail-due {
+#detail-due,
+#detail-end-date {
   width: 100%;
   padding: 0.55rem 0.7rem;
   border: 1px solid #d0d5dd;
@@ -296,7 +397,8 @@ button {
 }
 
 #detail-text:focus,
-#detail-due:focus {
+#detail-due:focus,
+#detail-end-date:focus {
   outline: none;
   border-color: #4f7cff;
   box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.15);
@@ -340,14 +442,17 @@ button {
   display: none;
 }
 
-.due-quick {
+/* One chip component for four jobs: due-date shortcuts, repeat presets,
+   weekdays and the end condition. Generic on purpose — a .due-chip name would
+   have meant duplicating all of this three more times, in both themes. */
+.chip-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
   margin-bottom: 0.5rem;
 }
 
-.due-chip {
+.chip {
   background: #f4f5f7;
   color: #475467;
   border: 1px solid #e3e7ee;
@@ -356,12 +461,12 @@ button {
   padding: 0.3rem 0.7rem;
 }
 
-.due-chip:hover {
+.chip:hover {
   background: #e9edf4;
   color: #1f2933;
 }
 
-.due-chip.active {
+.chip.active {
   background: rgba(79, 124, 255, 0.12);
   border-color: #4f7cff;
   color: #2f52b5;
@@ -383,6 +488,83 @@ button {
 .due-hint.overdue {
   color: #a3261a;
   font-weight: 600;
+}
+
+/* Repeat controls. The custom row reads as a sentence — "Every 2 weeks",
+   "Times per 3 week" — so the three controls stay on one line and only wrap
+   when there is genuinely no room. */
+
+.repeat-custom {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.repeat-select,
+.repeat-number {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.9rem;
+  background: #fff;
+  color: inherit;
+}
+
+.repeat-number {
+  width: 4.25rem;
+}
+
+.repeat-select:focus,
+.repeat-number:focus {
+  outline: none;
+  border-color: #4f7cff;
+  box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.15);
+}
+
+.end-count-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.end-count-label {
+  font-size: 0.85rem;
+  color: #475467;
+}
+
+.quota-status {
+  font-size: 0.8rem;
+  color: #475467;
+  background: #f4f5f7;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.detail-history {
+  font-size: 0.75rem;
+  color: #98a2b3;
+  margin-bottom: 1rem;
+}
+
+/* Grouped rather than one utility class with !important: each selector carries
+   its own class, so specificity is never in question. */
+.section.hidden,
+.section-heading.hidden,
+.repeat-block.hidden,
+.repeat-custom.hidden,
+.detail-done.hidden,
+.due-row.hidden,
+.end-count-row.hidden,
+.quota-status.hidden,
+.detail-history.hidden,
+.detail-hint.hidden {
+  display: none;
 }
 
 .detail-done {
@@ -627,13 +809,15 @@ body.theme-dark .detail-hint {
 }
 
 body.theme-dark #detail-text,
-body.theme-dark #detail-due {
+body.theme-dark #detail-due,
+body.theme-dark #detail-end-date {
   background: #131820;
   border-color: #333c4a;
 }
 
 body.theme-dark #detail-text:focus,
-body.theme-dark #detail-due:focus {
+body.theme-dark #detail-due:focus,
+body.theme-dark #detail-end-date:focus {
   border-color: #6b8fff;
   box-shadow: 0 0 0 3px rgba(107, 143, 255, 0.25);
 }
@@ -648,12 +832,16 @@ body.theme-dark .form-error {
 }
 
 body.theme-dark #todo-input.invalid,
-body.theme-dark #detail-text.invalid {
+body.theme-dark #detail-text.invalid,
+body.theme-dark #detail-due.invalid,
+body.theme-dark #detail-end-date.invalid {
   border-color: #f27c72;
 }
 
 body.theme-dark #todo-input.invalid:focus,
-body.theme-dark #detail-text.invalid:focus {
+body.theme-dark #detail-text.invalid:focus,
+body.theme-dark #detail-due.invalid:focus,
+body.theme-dark #detail-end-date.invalid:focus {
   border-color: #f27c72;
   box-shadow: 0 0 0 3px rgba(242, 124, 114, 0.2);
 }
@@ -673,18 +861,18 @@ body.theme-dark .due-clear:hover {
   color: #f27c72;
 }
 
-body.theme-dark .due-chip {
+body.theme-dark .chip {
   background: #232b36;
   color: #cbd2d9;
   border-color: #333c4a;
 }
 
-body.theme-dark .due-chip:hover {
+body.theme-dark .chip:hover {
   background: #2c3644;
   color: #f5f7fa;
 }
 
-body.theme-dark .due-chip.active {
+body.theme-dark .chip.active {
   background: rgba(107, 143, 255, 0.2);
   border-color: #6b8fff;
   color: #a8c0ff;
@@ -700,6 +888,58 @@ body.theme-dark .due-hint.due-today {
 
 body.theme-dark .due-hint.overdue {
   color: #f2a49b;
+}
+
+body.theme-dark .section-collapsible {
+  border-top-color: #2a3341;
+}
+
+body.theme-dark .section-heading,
+body.theme-dark .section-summary {
+  color: #7b8794;
+}
+
+body.theme-dark .section-summary:hover {
+  color: #cbd2d9;
+}
+
+body.theme-dark .section-summary::marker {
+  color: #5a6472;
+}
+
+body.theme-dark .repeat-badge {
+  background: #23304a;
+  color: #a8c0ff;
+}
+
+body.theme-dark .repeat-badge.finished {
+  background: #262e3a;
+  color: #7b8794;
+}
+
+body.theme-dark .repeat-select,
+body.theme-dark .repeat-number {
+  background: #131820;
+  border-color: #333c4a;
+}
+
+body.theme-dark .repeat-select:focus,
+body.theme-dark .repeat-number:focus {
+  border-color: #6b8fff;
+  box-shadow: 0 0 0 3px rgba(107, 143, 255, 0.25);
+}
+
+body.theme-dark .end-count-label {
+  color: #cbd2d9;
+}
+
+body.theme-dark .quota-status {
+  background: #232b36;
+  color: #cbd2d9;
+}
+
+body.theme-dark .detail-history {
+  color: #7b8794;
 }
 
 body.theme-dark .emoji-trigger {
@@ -794,7 +1034,8 @@ body.theme-dark .detail-save:hover {
     padding: 0.6rem 0.15rem;
   }
 
-  .due-badge {
+  .due-badge,
+  .repeat-badge {
     font-size: 0.7rem;
     padding: 0.1rem 0.35rem;
   }
@@ -805,5 +1046,22 @@ body.theme-dark .detail-save:hover {
 
   .detail-actions {
     flex-wrap: wrap;
+  }
+
+  /* Seven weekday chips will not fit across 288px at the default padding. */
+  .chip {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.5rem;
+  }
+
+  /* A repeat badge and a due badge on the same row left the task name breaking
+     one word per line. The ↻ still says "this comes back", and the interval is
+     in the tooltip — but a quota's progress is its only status, so .keep stays. */
+  .repeat-detail:not(.keep) {
+    display: none;
+  }
+
+  .repeat-number {
+    width: 3.5rem;
   }
 }
