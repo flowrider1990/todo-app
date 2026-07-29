@@ -60,18 +60,22 @@ h1 {
 }
 
 /* Shared by the add form and the detail dialog. :empty collapses it entirely,
-   so spacing is unchanged until there is something to say. pre-line honours
-   \n in the message, which keeps the text a plain textContent assignment
-   instead of innerHTML. */
+   so spacing is unchanged until there is something to say. */
 .form-error {
   font-size: 0.8rem;
   color: #a3261a;
   margin-top: 0.5rem;
-  white-space: pre-line;
 }
 
 .form-error:empty {
   display: none;
+}
+
+/* The call to action: its own line, and bold. A <strong> carries the emphasis
+   semantically, so this only has to break the line. */
+.form-error-action {
+  display: block;
+  font-weight: 600;
 }
 
 #todo-input {

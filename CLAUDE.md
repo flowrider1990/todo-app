@@ -41,7 +41,9 @@ Theme is the one piece of state that lives outside the `todos` array, and it mir
 
 Task names are validated in exactly one place, `validateName(text, field, errorEl, exceptId)`, used by **both** the add form and the dialog's Save. It rejects empty names and duplicates against done and un-done tasks alike, with different wording for each — a completed match points at "Clear completed" as the way out. When a name matches both a done and an un-done task, the un-done one wins the message. Comparison is trimmed and case-insensitive. `exceptId` is what lets a rename skip the task being renamed, which would otherwise always collide with itself.
 
-Errors render through one component, `.form-error` + `.invalid` on the field, driven by `setFieldError` / `clearFieldError`. The element collapses via `:empty` so it costs no layout space when quiet, and `white-space: pre-line` means a `\n` in the message becomes a line break — keep messages as `textContent`, never markup.
+Errors render through one component, `.form-error` + `.invalid` on the field, driven by `setFieldError` / `clearFieldError`. The element collapses via `:empty` so it costs no layout space when quiet.
+
+A message is `{ text, action }`, where `action` is the optional call to action — rendered as a `<strong class="form-error-action">` that `display: block` puts on its own line. Both parts are set with `textContent`, so this stays within the never-`innerHTML` rule; assigning `text` first also clears any previous action element.
 
 Other conventions in `app.js`:
 

@@ -342,17 +342,32 @@
     return matches.find((t) => !t.done) || matches[0] || null;
   }
 
-  // \n rather than markup — .form-error is white-space: pre-line, so the text
-  // stays a plain textContent assignment.
+  // { text, action }: the statement, then the call to action, which renders
+  // bold on its own line. action is optional.
   function duplicateMessage(duplicate) {
     return duplicate.done
-      ? "A completed task with that name already exists.\nChoose a different name or clear the list."
-      : "A task with that name already exists.\nPlease choose a different name.";
+      ? {
+          text: "A completed task with that name already exists.",
+          action: "Choose a different name or clear the list.",
+        }
+      : {
+          text: "A task with that name already exists.",
+          action: "Please choose a different name.",
+        };
   }
 
   // One error component, used by the add form and the detail dialog alike.
   function setFieldError(field, errorEl, message) {
-    if (errorEl) errorEl.textContent = message;
+    if (errorEl) {
+      // Assigning textContent first also clears any previous action element.
+      errorEl.textContent = message.text;
+      if (message.action) {
+        const action = document.createElement("strong");
+        action.className = "form-error-action";
+        action.textContent = message.action;
+        errorEl.appendChild(action);
+      }
+    }
     if (!field) return;
     field.classList.add("invalid");
     field.focus();
@@ -368,7 +383,7 @@
   // whether you are creating a task or renaming one.
   function validateName(text, field, errorEl, exceptId) {
     if (!text) {
-      setFieldError(field, errorEl, "Give the task a name.");
+      setFieldError(field, errorEl, { text: "Give the task a name." });
       return false;
     }
 
