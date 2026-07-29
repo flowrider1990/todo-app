@@ -23,7 +23,7 @@ Verification is manual: add a task, toggle it, delete it, click "Clear completed
 
 Three files, no abstraction layers:
 
-- [index.html](index.html) — static markup. Every element JS touches has a fixed `id`: `todo-form`, `todo-input`, `todo-list`, `empty-state`, `clear-completed`, `theme-toggle`. The task list itself is an empty `<ul>` filled at runtime.
+- [index.html](index.html) — static markup. Every element JS touches has a fixed `id`: `todo-form`, `todo-input`, `todo-list`, `empty-state`, `clear-completed`, `theme-toggle`, plus the detail dialog's `task-dialog`, `task-detail-form`, `detail-text`, `detail-done`, `detail-emoji`, `detail-due`, `detail-delete`, `detail-cancel`. The task list and the emoji picker are both empty containers filled at runtime.
 - [style.css](style.css) — plain CSS, no variables/nesting. State is expressed through classes JS toggles: `.todo-item.done`, `.empty-state.hidden`, `body.theme-dark`, plus the native `:disabled` state on `.clear-completed`.
 - [app.js](app.js) — the whole app, wrapped in an IIFE with `"use strict"`. Nothing is exposed on `window`.
 
@@ -41,7 +41,9 @@ Theme is the one piece of state that lives outside the `todos` array, and it mir
 
 Other conventions in `app.js`:
 
-- Todo shape is `{ id, text, done }`. `id` is a timestamp plus random suffix — treat it as an opaque string.
+- Todo shape is `{ id, text, done, emoji, due }`. `id` is a timestamp plus random suffix — treat it as an opaque string. `emoji` is `""` or a single emoji; `due` is `""` or a `YYYY-MM-DD` string. Todos saved before those two fields existed simply lack them, which reads as `undefined` — falsy, like `""` — so guard rather than migrate.
+- **Dates never go through `new Date(string)`.** `new Date("2026-07-30")` parses as UTC midnight and renders as the 29th in any negative-offset timezone. Compare `due` against `todayISO()` as strings (ISO dates sort lexicographically) and build display dates from parts.
+- The detail dialog lives **outside `#todo-list`** in the markup, because `render()` rebuilds that list on every mutation and would destroy it mid-edit. It holds only `editingId` plus a `draftEmoji` for the picker; task data is always re-read from `todos` by id. Everything commits together on Save — except Delete, which acts immediately and closes.
 - List items are built with `createElement` and `textContent`, never `innerHTML`, so user text cannot inject markup. Keep it that way.
 - `load()` wraps `JSON.parse` in try/catch and falls back to `[]`, so corrupt `localStorage` cannot break startup.
 - Optional elements are guarded (`if (clearCompletedBtn)`) — a missing element must not throw and take the whole app down. This was a real bug fix (commit `1acf1c0`); preserve the guards, and follow the same approach for any element that might not be present.
