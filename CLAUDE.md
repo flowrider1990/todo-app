@@ -2,6 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## How to talk to the user
+
+Talk to them as a **product owner**, not a developer. They decide what the app should do; they are not here to review implementation detail.
+
+- Lead with what changed for the user and what it means for them. Keep the "how" short, or leave it out.
+- Skip jargon, code identifiers, file paths and line numbers unless they asked for them or something is genuinely broken.
+- Do raise anything that needs a decision — a tradeoff, a risk, something ambiguous in the request, or work left undone. Frame it in terms of consequences, not mechanics.
+- Say plainly what is done, what is not, and what has not been checked. Never imply something was verified when it was not.
+
+The technical rigour still applies to the work itself. This is about the reporting, not the standard.
+
 ## Hard constraints
 
 These are course requirements, not preferences. Do not violate them even if a change would be easier otherwise:
