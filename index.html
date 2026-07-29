@@ -25,7 +25,35 @@
       </div>
       <p id="todo-error" class="form-error" role="alert"></p>
     </form>
-    <ul id="todo-list" class="todo-list"></ul>
+
+    <!-- Three sections, each a fixed container render() refills. Open carries no
+         disclosure — it is the one you always want visible. The other two are
+         <details> so the collapse is native, keyboard-reachable and needs no JS
+         beyond remembering the state. -->
+    <section id="section-open" class="section">
+      <h2 id="open-heading" class="section-heading">
+        <span class="section-title">Open</span>
+        <span id="count-open" class="section-count"></span>
+      </h2>
+      <ul id="list-open" class="todo-list"></ul>
+    </section>
+
+    <details id="section-later" class="section section-collapsible">
+      <summary class="section-summary">
+        <span class="section-title">Done for now</span>
+        <span id="count-later" class="section-count"></span>
+      </summary>
+      <ul id="list-later" class="todo-list"></ul>
+    </details>
+
+    <details id="section-done" class="section section-collapsible">
+      <summary class="section-summary">
+        <span class="section-title">Done</span>
+        <span id="count-done" class="section-count"></span>
+      </summary>
+      <ul id="list-done" class="todo-list"></ul>
+    </details>
+
     <p id="empty-state" class="empty-state">No tasks yet. Add one above!</p>
     <div class="todo-actions">
       <button id="clear-completed" class="clear-completed" type="button">
@@ -34,7 +62,7 @@
     </div>
   </main>
 
-  <!-- Must stay outside #todo-list: render() rebuilds that list on every mutation. -->
+  <!-- Must stay outside the lists: render() rebuilds them on every mutation. -->
   <dialog id="task-dialog" class="task-dialog">
     <form id="task-detail-form" class="task-detail">
       <h2 class="detail-title">Task details</h2>
@@ -45,7 +73,9 @@
         <p id="detail-error" class="form-error" role="alert"></p>
       </div>
 
-      <label class="detail-done">
+      <!-- Hidden while the task has an active repeat: for those, being done is
+           derived from the completion log, not something you set by hand. -->
+      <label class="detail-done" id="detail-done-row">
         <input type="checkbox" id="detail-done">
         <span>Done</span>
       </label>
@@ -53,13 +83,77 @@
       <span class="detail-label">Emoji</span>
       <div id="detail-emoji" class="emoji-picker"></div>
 
-      <label class="detail-label" for="detail-due">Due date <span class="detail-hint">(optional)</span></label>
-      <div class="due-row">
-        <input type="date" id="detail-due">
-        <button type="button" id="detail-due-clear" class="due-clear hidden" aria-label="Clear due date">×</button>
+      <span class="detail-label">Repeats</span>
+      <div id="detail-repeat-quick" class="chip-row"></div>
+      <div id="detail-repeat-custom" class="repeat-custom">
+        <select id="detail-repeat-kind" class="repeat-select" aria-label="Repeat style">
+          <option value="schedule">Every</option>
+          <option value="quota">Times per</option>
+        </select>
+        <input
+          type="number"
+          id="detail-repeat-n"
+          class="repeat-number"
+          min="1"
+          max="999"
+          step="1"
+          aria-label="Repeat amount"
+        >
+        <select id="detail-repeat-unit" class="repeat-select" aria-label="Repeat period">
+          <option value="day">day</option>
+          <option value="week">week</option>
+          <option value="month">month</option>
+        </select>
       </div>
-      <div id="detail-due-quick" class="due-quick"></div>
-      <p id="detail-due-hint" class="due-hint" aria-live="polite"></p>
+
+      <!-- Weekdays: scheduled weekly repeats only. Leave all off to keep the
+           weekday of the first date. -->
+      <div id="detail-weekday-block" class="repeat-block">
+        <span class="detail-label">On these days <span class="detail-hint">(optional)</span></span>
+        <div id="detail-weekdays" class="chip-row"></div>
+      </div>
+
+      <!-- One date input for two jobs: the due date of a one-off task, and the
+           next occurrence of a scheduled repeat. The label switches. -->
+      <div id="detail-due-block" class="repeat-block">
+        <label class="detail-label" for="detail-due">
+          <span id="detail-due-label">Due date</span>
+          <span id="detail-due-optional" class="detail-hint">(optional)</span>
+        </label>
+        <div class="due-row">
+          <input type="date" id="detail-due">
+          <button type="button" id="detail-due-clear" class="due-clear hidden" aria-label="Clear due date">×</button>
+        </div>
+        <div id="detail-due-quick" class="chip-row"></div>
+        <p id="detail-due-hint" class="due-hint" aria-live="polite"></p>
+      </div>
+
+      <!-- Quota repeats have no date; this reports the current period instead. -->
+      <p id="detail-quota-status" class="quota-status" aria-live="polite"></p>
+
+      <div id="detail-end-block" class="repeat-block">
+        <span class="detail-label">Ends</span>
+        <div id="detail-end-quick" class="chip-row"></div>
+        <div id="detail-end-date-row" class="due-row">
+          <input type="date" id="detail-end-date">
+        </div>
+        <div id="detail-end-count-row" class="end-count-row">
+          <span class="end-count-label">After</span>
+          <input
+            type="number"
+            id="detail-end-count"
+            class="repeat-number"
+            min="1"
+            max="999"
+            step="1"
+            aria-label="Number of completions before the repeat ends"
+          >
+          <span class="end-count-label">completions</span>
+        </div>
+        <p id="detail-repeat-error" class="form-error" role="alert"></p>
+      </div>
+
+      <p id="detail-history" class="detail-history"></p>
 
       <div class="detail-actions">
         <button type="button" id="detail-delete" class="detail-delete">Delete</button>

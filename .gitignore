@@ -1,0 +1,24 @@
+# Local Claude Code settings (machine-specific; CLAUDE.md is shared)
+.claude/settings.local.json
+
+# OS and cloud-sync junk
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+desktop.ini
+$RECYCLE.BIN/
+*.lnk
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+*.tmp
+*.gdoc
+*.gsheet
+*.gslides
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
