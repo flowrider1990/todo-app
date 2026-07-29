@@ -30,6 +30,40 @@
       </button>
     </div>
   </main>
+
+  <!-- Must stay outside #todo-list: render() rebuilds that list on every mutation. -->
+  <dialog id="task-dialog" class="task-dialog">
+    <form id="task-detail-form" class="task-detail">
+      <h2 class="detail-title">Task details</h2>
+
+      <label class="detail-label" for="detail-text">Name</label>
+      <input type="text" id="detail-text" autocomplete="off">
+
+      <label class="detail-done">
+        <input type="checkbox" id="detail-done">
+        <span>Done</span>
+      </label>
+
+      <span class="detail-label">Emoji</span>
+      <div id="detail-emoji" class="emoji-picker"></div>
+
+      <label class="detail-label" for="detail-due">Due date <span class="detail-hint">(optional)</span></label>
+      <div class="due-row">
+        <input type="date" id="detail-due">
+        <button type="button" id="detail-due-clear" class="due-clear hidden" aria-label="Clear due date">×</button>
+      </div>
+      <div id="detail-due-quick" class="due-quick"></div>
+      <p id="detail-due-hint" class="due-hint"></p>
+
+      <div class="detail-actions">
+        <button type="button" id="detail-delete" class="detail-delete">Delete</button>
+        <span class="detail-spacer"></span>
+        <button type="button" id="detail-cancel" class="detail-cancel">Cancel</button>
+        <button type="submit" class="detail-save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="app.js"></script>
 </body>
 </html>
