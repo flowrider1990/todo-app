@@ -51,9 +51,31 @@ h1 {
 }
 
 .todo-form {
+  margin-bottom: 1.25rem;
+}
+
+.todo-form-row {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 1.25rem;
+}
+
+/* Shared by the add form and the detail dialog. :empty collapses it entirely,
+   so spacing is unchanged until there is something to say. */
+.form-error {
+  font-size: 0.8rem;
+  color: #a3261a;
+  margin-top: 0.5rem;
+}
+
+.form-error:empty {
+  display: none;
+}
+
+/* The call to action: its own line, and bold. A <strong> carries the emphasis
+   semantically, so this only has to break the line. */
+.form-error-action {
+  display: block;
+  font-weight: 600;
 }
 
 #todo-input {
@@ -68,6 +90,19 @@ h1 {
   outline: none;
   border-color: #4f7cff;
   box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.15);
+}
+
+/* Both text fields share the invalid state. Listed by id because the base
+   rules are id-level, and a bare .invalid would lose on specificity. */
+#todo-input.invalid,
+#detail-text.invalid {
+  border-color: #c0392b;
+}
+
+#todo-input.invalid:focus,
+#detail-text.invalid:focus {
+  border-color: #c0392b;
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
 }
 
 button {
@@ -104,11 +139,15 @@ button {
   border-bottom: none;
 }
 
-.todo-item input[type="checkbox"] {
+/* One rule, because they are the same control in two places — the list row
+   and the detail dialog must not drift apart. */
+.todo-item input[type="checkbox"],
+.detail-done input[type="checkbox"] {
   width: 1.15rem;
   height: 1.15rem;
   cursor: pointer;
   flex-shrink: 0;
+  accent-color: #16a34a;
 }
 
 /* A <button> so it is keyboard-reachable; reset back to looking like text.
@@ -256,7 +295,16 @@ button {
   color: inherit;
 }
 
-#detail-text {
+#detail-text:focus,
+#detail-due:focus {
+  outline: none;
+  border-color: #4f7cff;
+  box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.15);
+}
+
+/* Groups the label, input and error so the error sits tight under the field
+   while the gap below the group stays constant. */
+.field {
   margin-bottom: 1rem;
 }
 
@@ -337,26 +385,12 @@ button {
   font-weight: 600;
 }
 
-#detail-text:focus,
-#detail-due:focus {
-  outline: none;
-  border-color: #4f7cff;
-  box-shadow: 0 0 0 3px rgba(79, 124, 255, 0.15);
-}
-
 .detail-done {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 1rem;
   cursor: pointer;
-}
-
-.detail-done input[type="checkbox"] {
-  width: 1.15rem;
-  height: 1.15rem;
-  cursor: pointer;
-  accent-color: #16a34a;
 }
 
 /* Adjacent sibling of the checkbox — no JS needed to light it up. */
@@ -397,7 +431,9 @@ button {
 
 .emoji-grid {
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
+  /* auto-fill rather than a fixed 9 columns: at 320px the fixed grid squeezed
+     cells to ~22px, clipping the glyphs. This keeps 9 across on desktop. */
+  grid-template-columns: repeat(auto-fill, minmax(2rem, 1fr));
   gap: 0.25rem;
   margin-top: 0.5rem;
   padding: 0.5rem;
@@ -602,8 +638,24 @@ body.theme-dark #detail-due:focus {
   box-shadow: 0 0 0 3px rgba(107, 143, 255, 0.25);
 }
 
+body.theme-dark .todo-item input[type="checkbox"],
 body.theme-dark .detail-done input[type="checkbox"] {
   accent-color: #22c55e;
+}
+
+body.theme-dark .form-error {
+  color: #f2a49b;
+}
+
+body.theme-dark #todo-input.invalid,
+body.theme-dark #detail-text.invalid {
+  border-color: #f27c72;
+}
+
+body.theme-dark #todo-input.invalid:focus,
+body.theme-dark #detail-text.invalid:focus {
+  border-color: #f27c72;
+  box-shadow: 0 0 0 3px rgba(242, 124, 114, 0.2);
 }
 
 body.theme-dark #detail-done:checked + span {
@@ -709,4 +761,49 @@ body.theme-dark .detail-cancel:hover {
 
 body.theme-dark .detail-save:hover {
   background: #6b8fff;
+}
+
+/* Narrow screens. Last in the file so it wins over the dark rules too.
+   At 320px the fixed 2rem body padding plus 1.5rem card padding ate 56px of
+   288, leaving the row too tight once an emoji and a due badge were present. */
+
+@media (max-width: 400px) {
+  body {
+    padding: 1rem 0.5rem;
+  }
+
+  .app {
+    padding: 1rem;
+    border-radius: 10px;
+  }
+
+  h1 {
+    font-size: 1.25rem;
+  }
+
+  .todo-form-row {
+    gap: 0.35rem;
+  }
+
+  .todo-form button {
+    padding: 0.6rem 0.8rem;
+  }
+
+  .todo-item {
+    gap: 0.5rem;
+    padding: 0.6rem 0.15rem;
+  }
+
+  .due-badge {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.35rem;
+  }
+
+  .task-dialog {
+    padding: 1rem;
+  }
+
+  .detail-actions {
+    flex-wrap: wrap;
+  }
 }

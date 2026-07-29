@@ -38,12 +38,14 @@
   const input = document.getElementById("todo-input");
   const list = document.getElementById("todo-list");
   const emptyState = document.getElementById("empty-state");
+  const todoError = document.getElementById("todo-error");
   const clearCompletedBtn = document.getElementById("clear-completed");
   const themeToggleBtn = document.getElementById("theme-toggle");
 
   const dialog = document.getElementById("task-dialog");
   const detailForm = document.getElementById("task-detail-form");
   const detailText = document.getElementById("detail-text");
+  const detailError = document.getElementById("detail-error");
   const detailDone = document.getElementById("detail-done");
   const detailEmoji = document.getElementById("detail-emoji");
   const detailDue = document.getElementById("detail-due");
@@ -66,10 +68,31 @@
   // The palette stays collapsed behind the trigger until asked for.
   let emojiExpanded = false;
 
+  function isDueString(value) {
+    return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+  }
+
+  // JSON.parse only guarantees valid JSON, not a usable todo. Without this,
+  // a hand-edited due of the wrong type reaches due.split() in formatDue and
+  // throws inside render(), blanking the whole list at startup.
+  function normalize(entry) {
+    if (!entry || typeof entry !== "object") return null;
+    if (typeof entry.id !== "string" || typeof entry.text !== "string") return null;
+    return {
+      id: entry.id,
+      text: entry.text,
+      done: entry.done === true,
+      emoji: typeof entry.emoji === "string" ? entry.emoji : "",
+      due: isDueString(entry.due) ? entry.due : "",
+    };
+  }
+
   function load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : [];
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map(normalize).filter(Boolean);
     } catch (e) {
       return [];
     }
@@ -137,11 +160,17 @@
     return isoFrom(date);
   }
 
+  // Built from parts, so the result is local midnight rather than the UTC
+  // midnight new Date("2026-07-30") would give.
+  function dateFromISO(due) {
+    const parts = due.split("-");
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  }
+
   // Both sides are pinned to local midnight before diffing, and rounded, so a
   // 23- or 25-hour DST day cannot knock the count off by one.
   function daysUntil(due) {
-    const parts = due.split("-");
-    const target = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    const target = dateFromISO(due);
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     return Math.round((target - start) / 86400000);
@@ -156,15 +185,12 @@
     return Math.abs(diff) + " days ago";
   }
 
-  function formatDue(due) {
-    const today = todayISO();
+  function formatDue(due, today) {
     if (due === today) return "Today";
 
-    const parts = due.split("-");
-    const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
     const options = { month: "short", day: "numeric" };
-    if (parts[0] !== today.slice(0, 4)) options.year = "numeric";
-    return date.toLocaleDateString(undefined, options);
+    if (due.slice(0, 4) !== today.slice(0, 4)) options.year = "numeric";
+    return dateFromISO(due).toLocaleDateString(undefined, options);
   }
 
   function openTaskDialog(id) {
@@ -177,6 +203,7 @@
     draftEmoji = todo.emoji || "";
     emojiExpanded = false;
     detailText.value = todo.text;
+    clearFieldError(detailText, detailError);
     detailDone.checked = todo.done;
     detailDue.value = todo.due || "";
     syncDueUI();
@@ -285,10 +312,8 @@
     if (!todo) return;
 
     const text = detailText.value.trim();
-    if (!text) {
-      detailText.focus();
-      return;
-    }
+    // exceptId, or the task would collide with its own unchanged name.
+    if (!validateName(text, detailText, detailError, editingId)) return;
 
     todo.text = text;
     todo.done = detailDone.checked;
@@ -303,6 +328,73 @@
     const id = editingId;
     dialog.close();
     if (id) deleteTodo(id);
+  }
+
+  // Done and un-done tasks both block, but the wording differs, so this
+  // returns the match rather than a boolean. An open duplicate wins when both
+  // exist — it is the more actionable of the two. exceptId lets a rename skip
+  // the task being renamed, which would otherwise always match itself.
+  function findDuplicate(text, exceptId) {
+    const needle = text.toLowerCase();
+    const matches = todos.filter(
+      (t) => t.id !== exceptId && t.text.toLowerCase() === needle
+    );
+    return matches.find((t) => !t.done) || matches[0] || null;
+  }
+
+  // { text, action }: the statement, then the call to action, which renders
+  // bold on its own line. action is optional.
+  function duplicateMessage(duplicate) {
+    return duplicate.done
+      ? {
+          text: "A completed task with that name already exists.",
+          action: "Choose a different name or clear the list.",
+        }
+      : {
+          text: "A task with that name already exists.",
+          action: "Please choose a different name.",
+        };
+  }
+
+  // One error component, used by the add form and the detail dialog alike.
+  function setFieldError(field, errorEl, message) {
+    if (errorEl) {
+      // Assigning textContent first also clears any previous action element.
+      errorEl.textContent = message.text;
+      if (message.action) {
+        const action = document.createElement("strong");
+        action.className = "form-error-action";
+        action.textContent = message.action;
+        errorEl.appendChild(action);
+      }
+    }
+    if (!field) return;
+    field.classList.add("invalid");
+    field.focus();
+    field.select();
+  }
+
+  function clearFieldError(field, errorEl) {
+    if (errorEl) errorEl.textContent = "";
+    if (field) field.classList.remove("invalid");
+  }
+
+  // Shared by both forms: empty and duplicate names are rejected identically
+  // whether you are creating a task or renaming one.
+  function validateName(text, field, errorEl, exceptId) {
+    if (!text) {
+      setFieldError(field, errorEl, { text: "Give the task a name." });
+      return false;
+    }
+
+    const duplicate = findDuplicate(text, exceptId);
+    if (duplicate) {
+      setFieldError(field, errorEl, duplicateMessage(duplicate));
+      return false;
+    }
+
+    clearFieldError(field, errorEl);
+    return true;
   }
 
   function addTodo(text) {
@@ -345,6 +437,8 @@
       clearCompletedBtn.disabled = !todos.some((t) => t.done);
     }
 
+    const today = todayISO();
+
     todos.forEach((todo) => {
       const li = document.createElement("li");
       li.className = "todo-item" + (todo.done ? " done" : "");
@@ -381,12 +475,11 @@
 
       if (todo.due) {
         const badge = document.createElement("span");
-        const today = todayISO();
         let state = "";
         if (todo.due < today) state = " overdue";
         else if (todo.due === today) state = " due-today";
         badge.className = "due-badge" + state;
-        badge.textContent = formatDue(todo.due);
+        badge.textContent = formatDue(todo.due, today);
         li.append(badge);
       }
 
@@ -408,6 +501,10 @@
       e.preventDefault();
       saveTaskDetails();
     });
+  }
+
+  if (detailText) {
+    detailText.addEventListener("input", () => clearFieldError(detailText, detailError));
   }
 
   if (detailDue) {
@@ -437,6 +534,7 @@
       editingId = null;
       draftEmoji = "";
       emojiExpanded = false;
+      clearFieldError(detailText, detailError);
     });
   }
 
@@ -445,10 +543,13 @@
     if (!theme) applyTheme();
   });
 
+  input.addEventListener("input", () => clearFieldError(input, todoError));
+
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const text = input.value.trim();
-    if (!text) return;
+    if (!validateName(text, input, todoError)) return;
+
     addTodo(text);
     input.value = "";
     input.focus();

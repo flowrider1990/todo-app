@@ -23,8 +23,8 @@ Verification is manual: add a task, toggle it, delete it, click "Clear completed
 
 Three files, no abstraction layers:
 
-- [index.html](index.html) — static markup. Every element JS touches has a fixed `id`: `todo-form`, `todo-input`, `todo-list`, `empty-state`, `clear-completed`, `theme-toggle`, plus the detail dialog's `task-dialog`, `task-detail-form`, `detail-text`, `detail-done`, `detail-emoji`, `detail-due`, `detail-due-clear`, `detail-due-quick`, `detail-due-hint`, `detail-delete`, `detail-cancel`. The task list, the emoji picker and the due-date shortcuts are all empty containers filled at runtime.
-- [style.css](style.css) — plain CSS, no variables/nesting. State is expressed through classes JS toggles: `.todo-item.done`, `.empty-state.hidden`, `body.theme-dark`, plus the native `:disabled` state on `.clear-completed`.
+- [index.html](index.html) — static markup. Every element JS touches has a fixed `id`: `todo-form`, `todo-input`, `todo-error`, `todo-list`, `empty-state`, `clear-completed`, `theme-toggle`, plus the detail dialog's `task-dialog`, `task-detail-form`, `detail-text`, `detail-done`, `detail-error`, `detail-emoji`, `detail-due`, `detail-due-clear`, `detail-due-quick`, `detail-due-hint`, `detail-delete`, `detail-cancel`. The task list, the emoji picker and the due-date shortcuts are all empty containers filled at runtime.
+- [style.css](style.css) — plain CSS, no variables/nesting. State is expressed through classes JS toggles: `.todo-item.done`, `.empty-state.hidden`, `body.theme-dark`, `.due-badge.overdue` / `.due-badge.due-today` (and the same pair on `.due-hint`), `.due-clear.hidden`, `.due-chip.active`, `.emoji-option.selected`, `.emoji-trigger.has-emoji`, `.invalid` on `#todo-input` / `#detail-text`, plus the native `:disabled` state on `.clear-completed` and `[aria-expanded]` on `.emoji-trigger`. `.form-error` collapses via `:empty` rather than a toggled class, so JS only ever sets its `textContent`.
 - [app.js](app.js) — the whole app, wrapped in an IIFE with `"use strict"`. Nothing is exposed on `window`.
 
 ### The one pattern to follow
@@ -39,11 +39,17 @@ When adding a feature (filters, editing, reordering, counts), extend this patter
 
 Theme is the one piece of state that lives outside the `todos` array, and it mirrors the same shape: `mutate theme → saveTheme() → applyTheme()`. It is stored separately under the `theme` key, holding `"light"` or `"dark"` only once the user clicks the toggle — until then the variable is `null` and the app follows `prefers-color-scheme`, which is why `resolvedTheme()` exists and why the `matchMedia` change listener re-applies only while no override is set.
 
+Task names are validated in exactly one place, `validateName(text, field, errorEl, exceptId)`, used by **both** the add form and the dialog's Save. It rejects empty names and duplicates against done and un-done tasks alike, with different wording for each — a completed match points at "Clear completed" as the way out. When a name matches both a done and an un-done task, the un-done one wins the message. Comparison is trimmed and case-insensitive. `exceptId` is what lets a rename skip the task being renamed, which would otherwise always collide with itself.
+
+Errors render through one component, `.form-error` + `.invalid` on the field, driven by `setFieldError` / `clearFieldError`. The element collapses via `:empty` so it costs no layout space when quiet.
+
+A message is `{ text, action }`, where `action` is the optional call to action — rendered as a `<strong class="form-error-action">` that `display: block` puts on its own line. Both parts are set with `textContent`, so this stays within the never-`innerHTML` rule; assigning `text` first also clears any previous action element.
+
 Other conventions in `app.js`:
 
-- Todo shape is `{ id, text, done, emoji, due }`. `id` is a timestamp plus random suffix — treat it as an opaque string. `emoji` is `""` or a single emoji; `due` is `""` or a `YYYY-MM-DD` string. Todos saved before those two fields existed simply lack them, which reads as `undefined` — falsy, like `""` — so guard rather than migrate.
+- Todo shape is `{ id, text, done, emoji, due }`. `id` is a timestamp plus random suffix — treat it as an opaque string. `emoji` is `""` or a single emoji; `due` is `""` or a `YYYY-MM-DD` string. `load()` runs every stored entry through `normalize()`, so those types are guaranteed by the time anything renders — older todos missing `emoji`/`due` come back with `""`, and entries without a string `id` and `text` are dropped. Rely on that instead of re-guarding at each use.
 - **Dates never go through `new Date(string)`.** `new Date("2026-07-30")` parses as UTC midnight and renders as the 29th in any negative-offset timezone. Compare `due` against `todayISO()` as strings (ISO dates sort lexicographically) and build display dates from parts.
 - The detail dialog lives **outside `#todo-list`** in the markup, because `render()` rebuilds that list on every mutation and would destroy it mid-edit. It holds only `editingId` plus a `draftEmoji` for the picker; task data is always re-read from `todos` by id. Everything commits together on Save — except Delete, which acts immediately and closes.
 - List items are built with `createElement` and `textContent`, never `innerHTML`, so user text cannot inject markup. Keep it that way.
-- `load()` wraps `JSON.parse` in try/catch and falls back to `[]`, so corrupt `localStorage` cannot break startup.
+- `load()` wraps `JSON.parse` in try/catch, rejects a non-array, and normalises every entry, so corrupt `localStorage` cannot break startup. This is stronger than a try/catch alone: valid JSON of the wrong shape once reached `due.split()` inside `render()` and blanked the entire list. Any new field must be type-checked in `normalize()`, not trusted.
 - Optional elements are guarded (`if (clearCompletedBtn)`) — a missing element must not throw and take the whole app down. This was a real bug fix (commit `1acf1c0`); preserve the guards, and follow the same approach for any element that might not be present.
